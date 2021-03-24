@@ -23,7 +23,10 @@ ARG USER=nym
 ARG BIN_DIR=/usr/local/bin
 ARG DATA_DIR=/data
 
-COPY --from=builder --chown=$USER:$USER $BUILDER_DIR/* $BIN_DIR
+RUN apt-get update -y \
+&& apt-get install -y libssl-dev curl jq git
+
+COPY --from=builder --chown=$USER:$USER $BUILDER_DIR/nym-* $BIN_DIR
 
 RUN adduser --home "$DATA_DIR" --shell /bin/bash --disabled-login --gecos "$USER user" $USER
 
