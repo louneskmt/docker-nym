@@ -6,13 +6,13 @@ env:
 on:
   push:
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-*"
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
 
 jobs:
   build:
     runs-on: ubuntu-20.04
-    name: Build and push nym image
+    name: Build and push nym images
     steps:
       - name: Login to Docker for building
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
@@ -52,20 +52,56 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      - name: Run Docker buildx against tag
+      - name: Run Docker buildx against tag for nym-builder
         run: |
           docker buildx build \
           --cache-from "type=local,src=/tmp/.buildx-cache" \
           --cache-to "type=local,dest=/tmp/.buildx-cache" \
           --platform linux/amd64 \
-          --tag ${{ secrets.DOCKER_USERNAME }}/nym:$TAG \
-          --output "type=registry" ./nym
+          --tag ${{ secrets.DOCKER_USERNAME }}/nym-builder:$TAG \
+          --output "type=registry" ./nym-builder
 
-      - name: Run Docker buildx against latest
+      - name: Run Docker buildx against latest for nym-builder
         run: |
           docker buildx build \
           --cache-from "type=local,src=/tmp/.buildx-cache" \
           --cache-to "type=local,dest=/tmp/.buildx-cache" \
           --platform linux/amd64 \
-          --tag ${{ secrets.DOCKER_USERNAME }}/nym:latest \
-          --output "type=registry" ./nym
+          --tag ${{ secrets.DOCKER_USERNAME }}/nym-builder:latest \
+          --output "type=registry" ./nym-builder
+
+      - name: Run Docker buildx against tag for nym-mixnode
+        run: |
+          docker buildx build \
+          --cache-from "type=local,src=/tmp/.buildx-cache" \
+          --cache-to "type=local,dest=/tmp/.buildx-cache" \
+          --platform linux/amd64 \
+          --tag ${{ secrets.DOCKER_USERNAME }}/nym-mixnode:$TAG \
+          --output "type=registry" ./nym-mixnode
+
+      - name: Run Docker buildx against latest for nym-mixnode
+        run: |
+          docker buildx build \
+          --cache-from "type=local,src=/tmp/.buildx-cache" \
+          --cache-to "type=local,dest=/tmp/.buildx-cache" \
+          --platform linux/amd64 \
+          --tag ${{ secrets.DOCKER_USERNAME }}/nym-mixnode:latest \
+          --output "type=registry" ./nym-mixnode
+
+      - name: Run Docker buildx against tag for nym-gateway
+        run: |
+          docker buildx build \
+          --cache-from "type=local,src=/tmp/.buildx-cache" \
+          --cache-to "type=local,dest=/tmp/.buildx-cache" \
+          --platform linux/amd64 \
+          --tag ${{ secrets.DOCKER_USERNAME }}/nym-gateway:$TAG \
+          --output "type=registry" ./nym-gateway
+
+      - name: Run Docker buildx against latest for nym-gateway
+        run: |
+          docker buildx build \
+          --cache-from "type=local,src=/tmp/.buildx-cache" \
+          --cache-to "type=local,dest=/tmp/.buildx-cache" \
+          --platform linux/amd64 \
+          --tag ${{ secrets.DOCKER_USERNAME }}/nym-gateway:latest \
+          --output "type=registry" ./nym-gateway
