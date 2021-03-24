@@ -1,21 +1,32 @@
 #!/bin/bash
 set -e
 
-nym_options=(
-  --id=${NYM_GATEWAY_ID:-mix}
-  --host=${NYM_CLIENTS_HOST}
-  --mix-host=${NYM_MIX_HOST}
+variablesList=(
+  NYM_ID
+  NYM_CLIENTS_ANNOUNCE_HOST
+  NYM_CLIENTS_ANNOUNCE_PORT
+  NYM_CLIENTS_HOST
+  NYM_CLIENTS_PORT
+  NYM_CLIENTS_LEDGER
+  NYM_MIX_ANNOUNCE_HOST
+  NYM_MIX_ANNOUNCE_PORT
+  NYM_MIX_HOST
+  NYM_MIX_PORT
+  NYM_INCENTIVES_ADDRESS
+  NYM_LOCATION
+  NYM_INBOXES
+  NYM_VALIDATOR
 )
 
-if [[ -z $NYM_CLIENTS_HOST ]]; then
-  echo "Please provide an IPv4 or IPv6 address that the gateway will listen on for requests coming from Nym clients, by specifying the environment variable NYM_CLIENTS_HOST. See https://nymtech.net/docs/run-nym-nodes/gateways/#initializing-a-gateway."
-  exit 1
-fi
+nym_options=()
 
-if [[ -z $NYM_MIX_HOST ]]; then
-  echo "Please provide an IPv4 or IPv6 address that the gateway will listen on for incoming Sphinx packets coming from the mixnet by specifying the environment variable NYM_MIX_HOST. See https://nymtech.net/docs/run-nym-nodes/gateways/#initializing-a-gateway."
-  exit 1
-fi
+for variable in ${variablesList[@]}
+do
+  param="$(echo --$variable= | sed 's/NYM_//g' | sed 's/_/-/g' | awk '{ print tolower($0) }')"
+  if [[ ! -z ${!variable} ]]; then
+    nym_options+=($param${!variable})
+  fi
+done
 
-/bin/nym-gateway init ${nym_options[@]}
-/bin/nym-gateway run --id $NYM_GATEWAY_ID
+/bin/nym-gateaway init ${nym_options[@]} $@
+/bin/nym-gateaway run --id $NYM_ID
