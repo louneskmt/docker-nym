@@ -12,8 +12,6 @@ variablesList=(
   NYM_MIX_ANNOUNCE_PORT
   NYM_MIX_HOST
   NYM_MIX_PORT
-  NYM_INCENTIVES_ADDRESS
-  NYM_LOCATION
   NYM_INBOXES
   NYM_VALIDATOR
 )
@@ -26,7 +24,20 @@ do
   if [[ ! -z ${!variable} ]]; then
     nym_options+=($param${!variable})
   fi
-done
+fi
 
-/bin/nym-gateaway init ${nym_options[@]} $@
-/bin/nym-gateaway run --id $NYM_ID
+if [[ -z $NYM_ID ]]; then
+  echo "Please provide an ID for your gateway (NYM_ID environment variable)."
+  exit 1
+fi
+
+NYM_DATA_DIR="/data/.nym"
+
+if [ ! -e $NYM_DATA_DIR/.initiated ]; then
+  echo "Running: /usr/local/bin/nym-gateway init ${nym_options[@]} $@"
+  /usr/local/bin/nym-gateway init ${nym_options[@]} $@
+  
+  touch $NYM_DATA_DIR/.initiated
+fi
+
+/usr/local/bin/nym-gateway run --id $NYM_ID

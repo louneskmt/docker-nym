@@ -4,12 +4,12 @@ set -e
 variablesList=(
   NYM_ID
   NYM_HOST
+  NYM_PORT
   NYM_ANNOUNCE_HOST
   NYM_ANNOUNCE_PORT
-  NYM_INCENTIVES_ADDRESS
-  NYM_LOCATION
   NYM_LAYER
   NYM_METRICS_SERVER
+  NYM_MIXNET_CONTRACT
   NYM_VALIDATOR
 )
 
@@ -23,8 +23,28 @@ do
   fi
 done
 
-# Set ulimit
-sed "s/.*DefaultLimitNOFILE=.*/DefaultLimitNOFILE=65535/g" -i /etc/systemd/system.conf
+if [[ -z $NYM_ID ]]; then
+  echo "Please provide an ID for your mixnode (NYM_ID environment variable)."
+  exit 1
+fi
 
-/bin/nym-mixnode init ${nym_options[@]} $@
-/bin/nym-mixnode run --id $NYM_ID
+if [[ -z $NYM_TELEGRAM_USER ]]; then
+  echo "Please provide a Telegram username for your mixnode (NYM_TELEGRAM_USER environment variable)."
+  echo "See https://nymtech.net/docs/run-nym-nodes/mixnodes/#claim-your-mixnode-in-telegram-so-you-can-get-tokens"
+  echo "Example: 'NYM_TELEGRAM_USER: @nym'"
+  exit 1
+fi
+
+NYM_DATA_DIR="/data/.nym"
+
+if [ ! -e $NYM_DATA_DIR/.initiated ]; then
+  echo "Running: /usr/local/bin/nym-mixnode init ${nym_options[@]} $@"
+  /usr/local/bin/nym-mixnode init ${nym_options[@]} $@
+  echo
+  echo "Running: /usr/local/bin/nym-mixnode sign --id $NYM_ID --text $NYM_TELEGRAM_USER"
+  /usr/local/bin/nym-mixnode sign --id $NYM_ID --text $NYM_TELEGRAM_USER
+
+  touch $NYM_DATA_DIR/.initiated
+fi
+
+/usr/local/bin/nym-mixnode run --id $NYM_ID

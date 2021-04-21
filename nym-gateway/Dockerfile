@@ -1,4 +1,4 @@
-ARG VERSION=v0.9.2
+ARG VERSION=v0.10.0
 ARG BUILDER_DIR=/srv/nym/release
 
 FROM louneskmt/nym-builder:$VERSION as builder
@@ -13,9 +13,9 @@ ARG DATA_DIR=/data
 RUN apt-get update -y \
 && apt-get install -y libssl-dev curl jq git
 
-COPY --from=builder --chown=$USER:$USER $BUILDER_DIR/nym-gateway $BIN_DIR/nym-gateway
-
 RUN adduser --home "$DATA_DIR" --shell /bin/bash --disabled-login --gecos "$USER user" $USER
+
+COPY --from=builder --chown=$USER:$USER $BUILDER_DIR/nym-gateway $BIN_DIR/nym-gateway
 
 COPY    ./entrypoint.sh /entrypoint.sh
 
