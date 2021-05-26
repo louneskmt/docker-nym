@@ -47,4 +47,12 @@ if [ ! -e $NYM_DATA_DIR/.initiated ]; then
   touch $NYM_DATA_DIR/.initiated
 fi
 
+echo
+echo "Trying to upgrade..."
+echo "Running: /usr/local/bin/nym-mixnode upgrade --id $NYM_ID"
+/usr/local/bin/nym-mixnode upgrade --id $NYM_ID
+
+echo
+echo "Starting mixnode..."
+echo "Running: /usr/local/bin/nym-mixnode run --id $NYM_ID"
 /usr/local/bin/nym-mixnode run --id $NYM_ID

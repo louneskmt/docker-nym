@@ -1,4 +1,4 @@
-ARG VERSION=v0.10.0
+ARG VERSION=v0.10.1
 ARG BUILDER_DIR=/srv/nym
 
 FROM rust:1.50.0-slim-buster as builder

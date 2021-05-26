@@ -1,4 +1,4 @@
-ARG VERSION=v0.10.0
+ARG VERSION=v0.10.1
 ARG BUILDER_DIR=/srv/nym/release
 
 FROM louneskmt/nym-builder:$VERSION as builder

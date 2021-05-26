@@ -1,6 +1,6 @@
 # Docker Nym
 
-This repository provides Docker images for Nym. Images are built on tag using a GitHub Workflow (see its [source code](https://github.com/louneskmt/docker-nym/blob/main/.github/workflows/on-tag.yml) and [runs](https://github.com/louneskmt/docker-nym/actions).
+This repository provides Docker images for Nym. Images are built on tag using a GitHub Workflow (see its [source code](https://github.com/louneskmt/docker-nym/blob/main/.github/workflows/on-tag.yml) and [runs](https://github.com/louneskmt/docker-nym/actions)).
 
 All images are uploaded automatically to my Docker Hub account:
 - [Nym Mixnode image](https://hub.docker.com/repository/docker/louneskmt/nym-mixnode)
@@ -14,7 +14,7 @@ More info about Nym:
 This repository and these Nym images are not official nor directly affiliated to the Nym team.
 
 # Nym Mixnode
-On first startup, the mixnode will be automatically initiated with your configuration. You'll need to follow [these instructions](https://nymtech.net/docs/run-nym-nodes/mixnodes/#claim-your-mixnode-in-telegram-so-you-can-get-tokens) to claim your node. 
+On first startup, the mixnode will be automatically initiated with your configuration. You'll need to follow [these instructions](https://nymtech.net/docs/run-nym-nodes/mixnodes/#claim-your-mixnode-in-telegram-so-you-can-get-tokens) to claim your node.
 
 You can either run this container using [`docker-compose`](https://docs.docker.com/compose/install/), or as a standlone container.
 
@@ -32,21 +32,34 @@ OR
 $ docker logs nym-mixnode
 ```
 
-## Configuration options
-All your Nym mixnode configuration can be set using the following environment variables.
+## Setup IPv6
+In order for your node to support IPv6 (which is mandatory if you don't want to loose reputation on the network), you will need to configure Docker. As Docker doesn't support well IPv6, we'll use an IPv6 NAT container. More info [here](https://github.com/robbertkl/docker-ipv6nat).
 
-You can find more info on these on the [official documentation page](https://nymtech.net/docs/run-nym-nodes/mixnodes/).
-| Name                | Description |
-| ---                 | --- |
-| `NYM_ID`              | Id of the nym-mixnode we want to run |
-| `NYM_HOST`            | The custom host on which the mixnode will be running |
-| `NYM_PORT`            | The port on which the mixnode will be listening |
-| `NYM_ANNOUNCE_HOST`   | The host that will be reported to the directory server |
-| `NYM_ANNOUNCE_PORT`   | The port that will be reported to the directory server |
-| `NYM_LAYER`          | The mixnet layer of this particular node |
-| `NYM_METRICS_SERVER`  | Server to which the node is sending all metrics data |
-| `NYM_MIXNET_CONTRACT` | Address of the validator contract managing the network |
-| `NYM_VALIDATOR`       | REST endpoint of the validator the node is registering presence with |
+First, create a new Docker IPv6 subnet:
+
+```shell
+$ docker network create --ipv6 --subnet="fdc4:f42f:270c:1a84::/64" nym_ipv6_network
+```
+
+Replace `fdc4:f42f:270c:1a84::/64` by another random CID generated on
+https://simpledns.plus/private-ipv6.
+
+Then, create the NAT container.
+
+```shell
+$ docker pull robbertkl/ipv6nat
+$ docker run -d \
+         --cap-add=NET_ADMIN \
+         --cap-add=NET_RAW \
+         --cap-add=SYS_MODULE \
+         --cap-drop=ALL \
+         --name="IPv6NAT" \
+         --network=host \
+         --restart=unless-stopped \
+         --volume="/lib/modules:/lib/modules:ro" \
+         --volume="/var/run/docker.sock:/var/run/docker.sock:ro" \
+         robbertkl/ipv6nat
+```
 
 ## Example
 
@@ -58,8 +71,9 @@ version: '3.7'
 
 services:
   mixnode:
-    image: louneskmt/nym-mixnode:v0.10.0
+    image: louneskmt/nym-mixnode:v0.10.1
     container_name: nym-mixnode
+    stop_signal: SIGINT
     ulimits:
       nproc: 65535
     ports:
@@ -76,6 +90,7 @@ services:
     networks:
       nym:
         ipv4_address: 172.20.0.3
+      nym_ipv6:
 
 networks:
   nym:
@@ -84,13 +99,21 @@ networks:
       driver: default
       config:
         - subnet: "172.20.0.0/16"
+  nym_ipv6:
+    name: nym_ipv6_network
+```
+
+To start your Nym mixnode, go to the `nym-mixnode` directory, where `docker-compose.yml` is located, and execute:
+
+```shell
+$ docker-compose up -d
 ```
 
 ### As a standlone container (not well tested):
 ```shell
 $ cd nym-mixnode
 $ docker network create --subnet=172.20.0.0/16 nym_network
-$ docker run -d \
+$ docker create \
          -v $PWD/data:/data \
          -p "1789:1789" \
          -e 'NYM_ID=mixnode' \
@@ -100,11 +123,30 @@ $ docker run -d \
          -e 'NYM_ANNOUNCE_PORT=1789' \
          -e 'NYM_TELEGRAM_USER="@username"' \
          --ulimit "nproc=65535" \
+         --stop-signal "SIGINT" \
          --network "nym_network" \
          --ip "172.20.0.3" \
          --name "nym-mixnode" \
-         louneskmt/nym-mixnode:v0.10.0
+         louneskmt/nym-mixnode:v0.10.1
+$ docker network connect nym_ipv6_network nym-mixnode
+$ docker start nym-mixnode
 ```
+
+## Configuration options
+All your Nym mixnode configuration can be set using the following environment variables.
+
+You can find more info on these on the [official documentation page](https://nymtech.net/docs/run-nym-nodes/mixnodes/).
+| Name                | Description |
+| ---                 | --- |
+| `NYM_ID`              | Id of the nym-mixnode we want to run |
+| `NYM_HOST`            | The custom host on which the mixnode will be running |
+| `NYM_PORT`            | The port on which the mixnode will be listening |
+| `NYM_ANNOUNCE_HOST`   | The host that will be reported to the directory server |
+| `NYM_ANNOUNCE_PORT`   | The port that will be reported to the directory server |
+| `NYM_LAYER`          | The mixnet layer of this particular node |
+| `NYM_METRICS_SERVER`  | Server to which the node is sending all metrics data |
+| `NYM_MIXNET_CONTRACT` | Address of the validator contract managing the network |
+| `NYM_VALIDATOR`       | REST endpoint of the validator the node is registering presence with |
 
 # Nym Gateway - Not tested yet
 On first startup, the gateway will be automatically initiated with your configuration.
