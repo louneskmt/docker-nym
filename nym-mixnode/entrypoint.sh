@@ -30,8 +30,15 @@ fi
 
 if [[ -z $NYM_TELEGRAM_USER ]]; then
   echo "Please provide a Telegram username for your mixnode (NYM_TELEGRAM_USER environment variable)."
-  echo "See https://nymtech.net/docs/run-nym-nodes/mixnodes/#claim-your-mixnode-in-telegram-so-you-can-get-tokens"
+  echo "See https://nymtech.net/docs/run-nym-nodes/mixnodes/#claim-your-mixnode-in-telegram-to-receive-tokens"
   echo "Example: 'NYM_TELEGRAM_USER: @nym'"
+  exit 1
+fi
+
+if [[ -z $NYM_PUNK_ADDRESS ]]; then
+  echo "Please provide a PUNK address for your mixnode (NYM_PUNK_ADDRESS environment variable)."
+  echo "See https://nymtech.net/docs/run-nym-nodes/mixnodes/#claim-your-mixnode-in-telegram-to-receive-tokens"
+  echo "Example: 'NYM_PUNK_ADDRESS: punk1rytmasg5kavx4xasa0zg0u69jus8fn0r5j7nnt'"
   exit 1
 fi
 
@@ -40,9 +47,6 @@ NYM_DATA_DIR="/data/.nym"
 if [ ! -e $NYM_DATA_DIR/.initiated ]; then
   echo "Running: /usr/local/bin/nym-mixnode init ${nym_options[@]} $@"
   /usr/local/bin/nym-mixnode init ${nym_options[@]} $@
-  echo
-  echo "Running: /usr/local/bin/nym-mixnode sign --id $NYM_ID --text $NYM_TELEGRAM_USER"
-  /usr/local/bin/nym-mixnode sign --id $NYM_ID --text $NYM_TELEGRAM_USER
 
   touch $NYM_DATA_DIR/.initiated
 fi
@@ -51,6 +55,11 @@ echo
 echo "Trying to upgrade..."
 echo "Running: /usr/local/bin/nym-mixnode upgrade --id $NYM_ID"
 /usr/local/bin/nym-mixnode upgrade --id $NYM_ID
+
+echo
+echo "Generating signing details..."
+echo "Running: /usr/local/bin/nym-mixnode sign --id $NYM_ID --text \"$NYM_TELEGRAM_USER $NYM_PUNK_ADDRESS\""
+/usr/local/bin/nym-mixnode sign --id $NYM_ID --text "$NYM_TELEGRAM_USER $NYM_PUNK_ADDRESS"
 
 echo
 echo "Starting mixnode..."

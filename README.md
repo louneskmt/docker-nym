@@ -78,6 +78,8 @@ services:
       nproc: 65535
     ports:
       - "1789:1789"
+      - "1790:1790"
+      - "8000:8000"
     volumes:
       - $PWD/data:/data
     environment:
@@ -116,10 +118,12 @@ $ docker network create --subnet=172.20.0.0/16 nym_network
 $ docker create \
          -v $PWD/data:/data \
          -p "1789:1789" \
+         -p "1790:1790" \
+         -p "8000:8000" \
          -e 'NYM_ID=mixnode' \
          -e 'NYM_HOST=172.20.0.3' \
          -e 'NYM_PORT=1789' \
-         -e 'NYM_ANNOUNCE_HOST=213.136.91.13' \
+         -e 'NYM_ANNOUNCE_HOST=X.X.X.X' \
          -e 'NYM_ANNOUNCE_PORT=1789' \
          -e 'NYM_TELEGRAM_USER="@username"' \
          --ulimit "nproc=65535" \
